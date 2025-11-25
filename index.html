@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prime Properties | Luxury Real Estate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1a365d",
+              secondary: "#2d3748",
+              accent: "#e53e3e",
+            },
+            fontFamily: {
+              poppins: ["Poppins", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+      }
+      .property-card:hover {
+        transform: translateY(-5px);
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+      .hero-bg {
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+          url("https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1073&q=80")
+            center/cover no-repeat;
+      }
+      .property-image {
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+      }
+      .testimonial-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+      }
+      .feature-icon {
+        width: 70px;
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba(229, 62, 62, 0.1);
+        color: #e53e3e;
+        margin: 0 auto 15px;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        overflow-y: auto;
+      }
+      .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 0;
+        width: 90%;
+        max-width: 800px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+      .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 25px;
+        font-size: 35px;
+        font-weight: bold;
+        color: white;
+        cursor: pointer;
+        z-index: 1001;
+      }
+      .property-gallery {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .gallery-img {
+        height: 120px;
+        background-size: cover;
+        background-position: center;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .active-gallery {
+        border: 3px solid #e53e3e;
+      }
+      #property-map {
+        height: 400px;
+        width: 100%;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+      .search-results {
+        display: none;
+      }
+      .no-results {
+        display: none;
+        text-align: center;
+        padding: 40px;
+      }
+    </style>
+  </head>
+  <body class="font-poppins bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+      <div
+        class="container mx-auto px-4 py-3 flex justify-between items-center"
+      >
+        <div class="flex items-center">
+          <i class="fas fa-home text-accent text-2xl mr-2"></i>
+          <span class="text-xl font-bold text-primary">Prime Properties</span>
+        </div>
+
+        <nav class="hidden md:flex space-x-8">
+          <a
+            href="#"
+            class="text-secondary hover:text-accent font-medium home-link"
+            >Home</a
+          >
+          <a
+            href="#properties"
+            class="text-secondary hover:text-accent font-medium"
+            >Properties</a
+          >
+          <a
+            href="#services"
+            class="text-secondary hover:text-accent font-medium"
+            >Services</a
+          >
+          <a
+            href="#map-section"
+            class="text-secondary hover:text-accent font-medium"
+            >Map Search</a
+          >
+          <a href="#agents" class="text-secondary hover:text-accent font-medium"
+            >Agents</a
+          >
+          <a
+            href="#contact"
+            class="text-secondary hover:text-accent font-medium"
+            >Contact</a
+          >
+        </nav>
+
+        <div class="flex items-center space-x-4">
+          <button
+            class="bg-primary text-white px-4 py-2 rounded-md hover:bg-accent transition duration-300"
+          >
+            <i class="fas fa-phone-alt mr-2"></i>Contact Us
+          </button>
+          <button class="md:hidden text-primary" id="mobile-menu-btn">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden bg-white py-4 hidden" id="mobile-menu">
+        <div class="container mx-auto px-4 flex flex-col space-y-4">
+          <a
+            href="#"
+            class="text-secondary hover:text-accent font-medium home-link"
+            >Home</a
+          >
+          <a
+            href="#properties"
+            class="text-secondary hover:text-accent font-medium"
+            >Properties</a
+          >
+          <a
+            href="#services"
+            class="text-secondary hover:text-accent font-medium"
+            >Services</a
+          >
+          <a
+            href="#map-section"
+            class="text-secondary hover:text-accent font-medium"
+            >Map Search</a
+          >
+          <a href="#agents" class="text-secondary hover:text-accent font-medium"
+            >Agents</a
+          >
+          <a
+            href="#contact"
+            class="text-secondary hover:text-accent font-medium"
+            >Contact</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-20 md:py-32" id="home">
+      <div class="container mx-auto px-4 text-center">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6">
+          Find Your Dream Home Today
+        </h1>
+        <p class="text-xl mb-10 max-w-2xl mx-auto">
+          Discover the perfect property from our extensive collection of luxury
+          homes and apartments.
+        </p>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
+          <form
+            id="property-search-form"
+            class="grid grid-cols-1 md:grid-cols-4 gap-4"
+          >
+            <div>
+              <label class="block text-gray-700 text-sm font-medium mb-2"
+                >Location</label
+              >
+              <select
+                class="w-full p-2 border border-gray-300 rounded-md text-gray-700"
+                id="search-location"
+              >
+                <option value="all">Any Location</option>
+                <option value="new-york">New York</option>
+                <option value="los-angeles">Los Angeles</option>
+                <option value="chicago">Chicago</option>
+                <option value="miami">Miami</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-medium mb-2"
+                >Property Type</label
+              >
+              <select
+                class="w-full p-2 border border-gray-300 rounded-md text-gray-700"
+                id="search-type"
+              >
+                <option value="all">Any Type</option>
+                <option value="house">House</option>
+                <option value="apartment">Apartment</option>
+                <option value="villa">Villa</option>
+                <option value="condo">Condo</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm font-medium mb-2"
+                >Price Range</label
+              >
+              <select
+                class="w-full p-2 border border-gray-300 rounded-md text-gray-700"
+                id="search-price"
+              >
+                <option value="all">Any Price</option>
+                <option value="100000-300000">$100,000 - $300,000</option>
+                <option value="300000-500000">$300,000 - $500,000</option>
+                <option value="500000-1000000">$500,000 - $1,000,000</option>
+                <option value="1000000+">$1,000,000+</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button
+                type="submit"
+                class="w-full bg-accent text-white p-2 rounded-md hover:bg-red-600 transition duration-300"
+              >
+                <i class="fas fa-search mr-2"></i>Search
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Properties -->
+    <section id="properties" class="py-16 bg-gray-50">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-primary mb-4">
+            Featured Properties
+          </h2>
+          <p class="text-gray-600 max-w-2xl mx-auto">
+            Explore our handpicked selection of premium properties that offer
+            the perfect blend of luxury and comfort.
+          </p>
+        </div>
+
+        <div class="search-results mb-6">
+          <h3 class="text-xl font-bold text-primary mb-4">Search Results</h3>
+        </div>
+
+        <div class="no-results">
+          <i class="fas fa-search text-5xl text-gray-400 mb-4"></i>
+          <h3 class="text-xl font-bold text-gray-600 mb-2">
+            No Properties Found
+          </h3>
+          <p class="text-gray-500">
+            Try adjusting your search criteria to find more properties.
+          </p>
+        </div>
+
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          id="properties-container"
+        >
+          <!-- Properties will be dynamically inserted here -->
+        </div>
+
+        <div class="text-center mt-12">
+          <button
+            class="bg-primary text-white px-6 py-3 rounded-md hover:bg-accent transition duration-300 font-medium"
+            id="view-all-properties"
+          >
+            View All Properties
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map Search Section -->
+    <section id="map-section" class="py-16 bg-white">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-primary mb-4">
+            Find Properties on Map
+          </h2>
+          <p class="text-gray-600 max-w-2xl mx-auto">
+            Browse our properties by location using our interactive map.
+          </p>
+        </div>
+
+        <div id="property-map"></div>
+
+        <div
+          class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"
+          id="map-properties-list"
+        >
+          <!-- Map property list will be dynamically inserted here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Services -->
+    <section id="services" class="py-16 bg-white">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-primary mb-4">Our Services</h2>
+          <p class="text-gray-600 max-w-2xl mx-auto">
+            We offer comprehensive real estate services to help you buy, sell,
+            or rent properties with ease.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="text-center p-6">
+            <div class="feature-icon">
+              <i class="fas fa-home text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-primary mb-3">Property Sales</h3>
+            <p class="text-gray-600">
+              We help you find the perfect property to buy or sell your current
+              one at the best market price.
+            </p>
+          </div>
+
+          <div class="text-center p-6">
+            <div class="feature-icon">
+              <i class="fas fa-key text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-primary mb-3">Property Rental</h3>
+            <p class="text-gray-600">
+              Find your ideal rental property or list your property for rent
+              with our expert assistance.
+            </p>
+          </div>
+
+          <div class="text-center p-6">
+            <div class="feature-icon">
+              <i class="fas fa-chart-line text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-primary mb-3">
+              Investment Consulting
+            </h3>
+            <p class="text-gray-600">
+              Get expert advice on real estate investments to maximize your
+              returns and build wealth.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Agents -->
+    <section id="agents" class="py-16 bg-gray-50">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-primary mb-4">Meet Our Agents</h2>
+          <p class="text-gray-600 max-w-2xl mx-auto">
+            Our experienced real estate agents are dedicated to helping you find
+            your dream property.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div
+            class="bg-white rounded-lg overflow-hidden shadow-md text-center p-6"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80"
+              alt="Agent"
+              class="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+            />
+            <h3 class="text-xl font-bold text-primary mb-2">Michael Johnson</h3>
+            <p class="text-accent mb-4">Senior Real Estate Agent</p>
+            <p class="text-gray-600 mb-4">
+              With over 10 years of experience, Michael specializes in luxury
+              properties and commercial real estate.
+            </p>
+            <div class="flex justify-center space-x-4">
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-facebook-f"></i>
+              </a>
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-twitter"></i>
+              </a>
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-linkedin-in"></i>
+              </a>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-lg overflow-hidden shadow-md text-center p-6"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=761&q=80"
+              alt="Agent"
+              class="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+            />
+            <h3 class="text-xl font-bold text-primary mb-2">Sarah Williams</h3>
+            <p class="text-accent mb-4">Luxury Property Specialist</p>
+            <p class="text-gray-600 mb-4">
+              Sarah has an exceptional track record in marketing and selling
+              high-end residential properties.
+            </p>
+            <div class="flex justify-center space-x-4">
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-facebook-f"></i>
+              </a>
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-twitter"></i>
+              </a>
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-linkedin-in"></i>
+              </a>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-lg overflow-hidden shadow-md text-center p-6"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+              alt="Agent"
+              class="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+            />
+            <h3 class="text-xl font-bold text-primary mb-2">David Chen</h3>
+            <p class="text-accent mb-4">Investment Consultant</p>
+            <p class="text-gray-600 mb-4">
+              David helps clients identify lucrative real estate investment
+              opportunities and maximize returns.
+            </p>
+            <div class="flex justify-center space-x-4">
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-facebook-f"></i>
+              </a>
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-twitter"></i>
+              </a>
+              <a href="#" class="text-primary hover:text-accent">
+                <i class="fab fa-linkedin-in"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-16 bg-primary text-white">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold mb-4">What Our Clients Say</h2>
+          <p class="max-w-2xl mx-auto">
+            Hear from our satisfied clients who found their dream homes with our
+            help.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="testimonial-card rounded-lg p-6 text-gray-800">
+            <div class="flex items-center mb-4">
+              <img
+                src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80"
+                alt="Client"
+                class="w-12 h-12 rounded-full mr-4 object-cover"
+              />
+              <div>
+                <h4 class="font-bold">Jennifer Lopez</h4>
+                <p class="text-accent">Home Buyer</p>
+              </div>
+            </div>
+            <p class="italic">
+              "Prime Properties helped me find my dream home in just two weeks!
+              Their agents were professional, knowledgeable, and made the entire
+              process smooth and stress-free."
+            </p>
+            <div class="flex text-yellow-400 mt-4">
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+            </div>
+          </div>
+
+          <div class="testimonial-card rounded-lg p-6 text-gray-800">
+            <div class="flex items-center mb-4">
+              <img
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80"
+                alt="Client"
+                class="w-12 h-12 rounded-full mr-4 object-cover"
+              />
+              <div>
+                <h4 class="font-bold">Robert Taylor</h4>
+                <p class="text-accent">Property Investor</p>
+              </div>
+            </div>
+            <p class="italic">
+              "As a real estate investor, I've worked with many agencies, but
+              Prime Properties stands out. Their market insights and negotiation
+              skills helped me secure a great deal on a commercial property."
+            </p>
+            <div class="flex text-yellow-400 mt-4">
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="py-16 bg-white">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-primary mb-4">Contact Us</h2>
+          <p class="text-gray-600 max-w-2xl mx-auto">
+            Get in touch with us for any inquiries or to schedule a property
+            viewing.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div>
+            <h3 class="text-xl font-bold text-primary mb-6">Get In Touch</h3>
+            <!-- Netlify Form Configuration -->
+            <form
+              class="space-y-4"
+              name="contact"
+              method="POST"
+              data-netlify="true"
+              netlify-honeypot="bot-field"
+            >
+              <input type="hidden" name="form-name" value="contact" />
+              <p class="hidden">
+                <label
+                  >Don't fill this out if you're human: <input name="bot-field"
+                /></label>
+              </p>
+              <div>
+                <label
+                  class="block text-gray-700 text-sm font-medium mb-2"
+                  for="name"
+                  >Full Name</label
+                >
+                <input
+                  class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  type="text"
+                  id="name"
+                  name="name"
+                  placeholder="Your Name"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  class="block text-gray-700 text-sm font-medium mb-2"
+                  for="email"
+                  >Email Address</label
+                >
+                <input
+                  class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="Your Email"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  class="block text-gray-700 text-sm font-medium mb-2"
+                  for="phone"
+                  >Phone Number</label
+                >
+                <input
+                  class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  placeholder="Your Phone"
+                />
+              </div>
+              <div>
+                <label
+                  class="block text-gray-700 text-sm font-medium mb-2"
+                  for="message"
+                  >Message</label
+                >
+                <textarea
+                  class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
+                  id="message"
+                  name="message"
+                  rows="4"
+                  placeholder="Your Message"
+                  required
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                class="w-full bg-accent text-white p-3 rounded-md hover:bg-red-600 transition duration-300 font-medium"
+              >
+                Send Message
+              </button>
+            </form>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold text-primary mb-6">
+              Contact Information
+            </h3>
+            <div class="space-y-6">
+              <div class="flex items-start">
+                <div class="bg-primary text-white p-3 rounded-full mr-4">
+                  <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-lg text-primary">Our Office</h4>
+                  <p class="text-gray-600">
+                    123 Real Estate Avenue, Suite 500<br />New York, NY 10001
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-start">
+                <div class="bg-primary text-white p-3 rounded-full mr-4">
+                  <i class="fas fa-phone-alt"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-lg text-primary">Phone Number</h4>
+                  <p class="text-gray-600">+1 (555) 123-4567</p>
+                </div>
+              </div>
+
+              <div class="flex items-start">
+                <div class="bg-primary text-white p-3 rounded-full mr-4">
+                  <i class="fas fa-envelope"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-lg text-primary">Email Address</h4>
+                  <p class="text-gray-600">info@primeproperties.com</p>
+                </div>
+              </div>
+
+              <div class="flex items-start">
+                <div class="bg-primary text-white p-3 rounded-full mr-4">
+                  <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-lg text-primary">Business Hours</h4>
+                  <p class="text-gray-600">
+                    Monday - Friday: 9:00 AM - 6:00 PM<br />Saturday: 10:00 AM -
+                    4:00 PM
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8">
+              <h4 class="font-bold text-lg text-primary mb-4">Follow Us</h4>
+              <div class="flex space-x-4">
+                <a
+                  href="#"
+                  class="bg-primary text-white p-3 rounded-full hover:bg-accent transition duration-300"
+                >
+                  <i class="fab fa-facebook-f"></i>
+                </a>
+                <a
+                  href="#"
+                  class="bg-primary text-white p-3 rounded-full hover:bg-accent transition duration-300"
+                >
+                  <i class="fab fa-twitter"></i>
+                </a>
+                <a
+                  href="#"
+                  class="bg-primary text-white p-3 rounded-full hover:bg-accent transition duration-300"
+                >
+                  <i class="fab fa-instagram"></i>
+                </a>
+                <a
+                  href="#"
+                  class="bg-primary text-white p-3 rounded-full hover:bg-accent transition duration-300"
+                >
+                  <i class="fab fa-linkedin-in"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-secondary text-white py-12">
+      <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <div class="flex items-center mb-4">
+              <i class="fas fa-home text-accent text-2xl mr-2"></i>
+              <span class="text-xl font-bold">Prime Properties</span>
+            </div>
+            <p class="text-gray-300">
+              Your trusted partner in finding the perfect property for your
+              needs and lifestyle.
+            </p>
+          </div>
+
+          <div>
+            <h4 class="text-lg font-bold mb-4">Quick Links</h4>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-300 hover:text-white transition duration-300 home-link"
+                  >Home</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#properties"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Properties</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#services"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Services</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#map-section"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Map Search</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#contact"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Contact</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-lg font-bold mb-4">Property Types</h4>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Apartments</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Houses</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Villas</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Commercial</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-300 hover:text-white transition duration-300"
+                  >Luxury Homes</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-lg font-bold mb-4">Newsletter</h4>
+            <p class="text-gray-300 mb-4">
+              Subscribe to our newsletter for the latest property listings and
+              market updates.
+            </p>
+            <form
+              name="newsletter"
+              method="POST"
+              data-netlify="true"
+              class="flex"
+            >
+              <input type="hidden" name="form-name" value="newsletter" />
+              <input
+                type="email"
+                name="email"
+                placeholder="Your Email"
+                class="p-2 rounded-l-md w-full text-gray-800 focus:outline-none"
+                required
+              />
+              <button
+                type="submit"
+                class="bg-accent text-white p-2 rounded-r-md hover:bg-red-600 transition duration-300"
+              >
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div
+          class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400"
+        >
+          <p>&copy; 2025 Prime Properties. Made with Love By Glovance.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Property Details Modal -->
+    <div id="property-modal" class="modal">
+      <span class="close-modal">&times;</span>
+      <div class="modal-content">
+        <div id="modal-body">
+          <!-- Content will be inserted here by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Property data
+      const properties = [
+        {
+          id: 1,
+          title: "Modern Villa in Beverly Hills",
+          price: "$1,250,000",
+          type: "sale",
+          location: "los-angeles",
+          propertyType: "villa",
+          priceRange: "1000000+",
+          beds: 4,
+          baths: 3,
+          area: "3200 sqft",
+          description:
+            "This stunning modern villa offers luxury living at its finest. Featuring an open floor plan, high-end finishes, and panoramic views, this property is perfect for those seeking elegance and comfort.",
+          features: [
+            "Swimming Pool",
+            "Home Theater",
+            "Wine Cellar",
+            "Smart Home System",
+          ],
+          agent: "Michael Johnson",
+          agentPhone: "+1 (555) 123-4567",
+          agentEmail: "michael@primeproperties.com",
+          images: [
+            "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1175&q=80",
+            "https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1171&q=80",
+          ],
+          coordinates: [34.0901, -118.4065], // Beverly Hills coordinates
+        },
+        {
+          id: 2,
+          title: "Luxury Apartment in Manhattan",
+          price: "$4,500/mo",
+          type: "rent",
+          location: "new-york",
+          propertyType: "apartment",
+          priceRange: "300000-500000",
+          beds: 3,
+          baths: 2,
+          area: "1800 sqft",
+          description:
+            "Experience urban luxury in this beautifully appointed apartment located in the heart of Manhattan. With high ceilings and premium finishes throughout.",
+          features: [
+            "City Views",
+            "Concierge Service",
+            "Fitness Center",
+            "Rooftop Terrace",
+          ],
+          agent: "Sarah Williams",
+          agentPhone: "+1 (555) 123-4568",
+          agentEmail: "sarah@primeproperties.com",
+          images: [
+            "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+            "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+          ],
+          coordinates: [40.758, -73.9855], // Manhattan coordinates
+        },
+        {
+          id: 3,
+          title: "Waterfront House in Miami",
+          price: "$2,750,000",
+          type: "sale",
+          location: "miami",
+          propertyType: "house",
+          priceRange: "1000000+",
+          beds: 5,
+          baths: 4,
+          area: "4500 sqft",
+          description:
+            "This spectacular waterfront property offers direct access to the bay and breathtaking water views from nearly every room.",
+          features: [
+            "Waterfront",
+            "Private Dock",
+            "Infinity Pool",
+            "Outdoor Kitchen",
+          ],
+          agent: "David Chen",
+          agentPhone: "+1 (555) 123-4569",
+          agentEmail: "david@primeproperties.com",
+          images: [
+            "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1153&q=80",
+            "https://images.unsplash.com/photo-1600607687644-c7171b42498b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+          ],
+          coordinates: [25.7617, -80.1918], // Miami coordinates
+        },
+        {
+          id: 4,
+          title: "Downtown Chicago Condo",
+          price: "$650,000",
+          type: "sale",
+          location: "chicago",
+          propertyType: "condo",
+          priceRange: "500000-1000000",
+          beds: 2,
+          baths: 2,
+          area: "1200 sqft",
+          description:
+            "Modern condo in the heart of downtown Chicago with stunning city views and premium amenities.",
+          features: [
+            "City Views",
+            "Concierge",
+            "Fitness Center",
+            "Underground Parking",
+          ],
+          agent: "Michael Johnson",
+          agentPhone: "+1 (555) 123-4567",
+          agentEmail: "michael@primeproperties.com",
+          images: [
+            "https://images.unsplash.com/photo-1513584684374-8bab748fbf90?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1165&q=80",
+            "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+          ],
+          coordinates: [41.8781, -87.6298], // Chicago coordinates
+        },
+        {
+          id: 5,
+          title: "Suburban Family Home in New York",
+          price: "$850,000",
+          type: "sale",
+          location: "new-york",
+          propertyType: "house",
+          priceRange: "500000-1000000",
+          beds: 4,
+          baths: 3,
+          area: "2800 sqft",
+          description:
+            "Spacious family home in a quiet suburban neighborhood with excellent schools and community amenities.",
+          features: [
+            "Large Yard",
+            "Updated Kitchen",
+            "Finished Basement",
+            "2-Car Garage",
+          ],
+          agent: "Sarah Williams",
+          agentPhone: "+1 (555) 123-4568",
+          agentEmail: "sarah@primeproperties.com",
+          images: [
+            "https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+            "https://images.unsplash.com/photo-1484154218962-a197022b5858?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1174&q=80",
+          ],
+          coordinates: [40.7128, -74.006], // New York coordinates
+        },
+        {
+          id: 6,
+          title: "Los Angeles Luxury Apartment",
+          price: "$3,200/mo",
+          type: "rent",
+          location: "los-angeles",
+          propertyType: "apartment",
+          priceRange: "300000-500000",
+          beds: 2,
+          baths: 2,
+          area: "1100 sqft",
+          description:
+            "Bright and modern apartment in a prime Los Angeles location with resort-style amenities.",
+          features: ["Pool", "Gym", "Concierge", "Pet Friendly"],
+          agent: "David Chen",
+          agentPhone: "+1 (555) 123-4569",
+          agentEmail: "david@primeproperties.com",
+          images: [
+            "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+            "https://images.unsplash.com/photo-1567496898669-ee935f5f647a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1171&q=80",
+          ],
+          coordinates: [34.0522, -118.2437], // Los Angeles coordinates
+        },
+      ];
+
+      // Initialize the application
+      document.addEventListener("DOMContentLoaded", function () {
+        // Render all properties initially
+        renderProperties(properties);
+
+        // Initialize map
+        initMap();
+
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+        const mobileMenu = document.getElementById("mobile-menu");
+
+        if (mobileMenuBtn && mobileMenu) {
+          mobileMenuBtn.addEventListener("click", function () {
+            mobileMenu.classList.toggle("hidden");
+          });
+        }
+
+        // Home button functionality
+        const homeLinks = document.querySelectorAll(".home-link");
+        homeLinks.forEach((link) => {
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth",
+            });
+          });
+        });
+
+        // Property search form
+        const searchForm = document.getElementById("property-search-form");
+        if (searchForm) {
+          searchForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            performSearch();
+          });
+        }
+
+        // View all properties button
+        const viewAllBtn = document.getElementById("view-all-properties");
+        if (viewAllBtn) {
+          viewAllBtn.addEventListener("click", function () {
+            renderProperties(properties);
+            document.querySelector(".search-results").style.display = "none";
+            document.querySelector(".no-results").style.display = "none";
+          });
+        }
+
+        // Netlify form handling
+        const contactForm = document.querySelector('form[name="contact"]');
+        if (contactForm) {
+          contactForm.addEventListener("submit", function (e) {
+            // Form will be handled by Netlify
+            // You can add additional client-side validation here if needed
+          });
+        }
+      });
+
+      // Function to render properties
+      function renderProperties(propertiesToRender) {
+        const container = document.getElementById("properties-container");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        if (propertiesToRender.length === 0) {
+          document.querySelector(".no-results").style.display = "block";
+          return;
+        }
+
+        propertiesToRender.forEach((property) => {
+          const propertyCard = createPropertyCard(property);
+          container.appendChild(propertyCard);
+        });
+      }
+
+      // Function to create property card HTML
+      function createPropertyCard(property) {
+        const card = document.createElement("div");
+        card.className =
+          "bg-white rounded-lg overflow-hidden shadow-md property-card";
+        card.innerHTML = `
+                <div class="property-image" style="background-image: url('${
+                  property.images[0]
+                }')"></div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-xl font-bold text-primary">${
+                          property.title
+                        }</h3>
+                        <span class="${
+                          property.type === "sale"
+                            ? "bg-accent"
+                            : "bg-green-500"
+                        } text-white text-sm font-medium px-2 py-1 rounded">
+                            ${
+                              property.type === "sale" ? "For Sale" : "For Rent"
+                            }
+                        </span>
+                    </div>
+                    <p class="text-gray-600 mb-4 flex items-center">
+                        <i class="fas fa-map-marker-alt text-accent mr-2"></i> 
+                        ${getLocationName(property.location)}
+                    </p>
+                    <div class="flex justify-between text-gray-700 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-bed text-accent mr-2"></i>
+                            <span>${property.beds} Beds</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-bath text-accent mr-2"></i>
+                            <span>${property.baths} Baths</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-ruler-combined text-accent mr-2"></i>
+                            <span>${property.area}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-2xl font-bold text-primary">${
+                          property.price
+                        }</span>
+                        <button class="bg-primary text-white px-4 py-2 rounded-md hover:bg-accent transition duration-300 view-details" data-property="${
+                          property.id
+                        }">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+
+        // Add event listener to view details button
+        const viewDetailsBtn = card.querySelector(".view-details");
+        viewDetailsBtn.addEventListener("click", function () {
+          showPropertyModal(property.id);
+        });
+
+        return card;
+      }
+
+      // Function to perform property search
+      function performSearch() {
+        const location = document.getElementById("search-location").value;
+        const type = document.getElementById("search-type").value;
+        const price = document.getElementById("search-price").value;
+
+        const filteredProperties = properties.filter((property) => {
+          // Location filter
+          if (location !== "all" && property.location !== location) {
+            return false;
+          }
+
+          // Property type filter
+          if (type !== "all" && property.propertyType !== type) {
+            return false;
+          }
+
+          // Price range filter
+          if (price !== "all" && property.priceRange !== price) {
+            return false;
+          }
+
+          return true;
+        });
+
+        // Show search results
+        document.querySelector(".search-results").style.display = "block";
+        document.querySelector(
+          ".search-results h3"
+        ).textContent = `Search Results (${filteredProperties.length} properties found)`;
+
+        // Render filtered properties
+        renderProperties(filteredProperties);
+
+        // Show no results message if needed
+        if (filteredProperties.length === 0) {
+          document.querySelector(".no-results").style.display = "block";
+        } else {
+          document.querySelector(".no-results").style.display = "none";
+        }
+
+        // Scroll to properties section
+        document
+          .getElementById("properties")
+          .scrollIntoView({ behavior: "smooth" });
+      }
+
+      // Function to get location name from location code
+      function getLocationName(locationCode) {
+        const locations = {
+          "new-york": "New York, NY",
+          "los-angeles": "Los Angeles, CA",
+          chicago: "Chicago, IL",
+          miami: "Miami, FL",
+        };
+
+        return locations[locationCode] || locationCode;
+      }
+
+      // Function to initialize the map
+      function initMap() {
+        // Create map centered on US
+        const map = L.map("property-map").setView([39.8283, -98.5795], 4);
+
+        // Add tile layer
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        // Add markers for each property
+        properties.forEach((property) => {
+          const marker = L.marker(property.coordinates).addTo(map);
+          marker.bindPopup(`
+                    <div class="p-2">
+                        <h3 class="font-bold">${property.title}</h3>
+                        <p class="text-sm">${property.price}</p>
+                        <p class="text-xs">${getLocationName(
+                          property.location
+                        )}</p>
+                        <button class="mt-2 bg-accent text-white px-3 py-1 rounded text-xs view-on-map" data-property="${
+                          property.id
+                        }">
+                            View Details
+                        </button>
+                    </div>
+                `);
+
+          // Add event listener to the button in the popup
+          marker.on("popupopen", function () {
+            const viewBtn = document.querySelector(".view-on-map");
+            if (viewBtn) {
+              viewBtn.addEventListener("click", function () {
+                showPropertyModal(property.id);
+              });
+            }
+          });
+        });
+
+        // Create property list for map section
+        const mapPropertiesList = document.getElementById(
+          "map-properties-list"
+        );
+        if (mapPropertiesList) {
+          properties.forEach((property) => {
+            const propertyItem = document.createElement("div");
+            propertyItem.className = "bg-gray-50 p-4 rounded-lg";
+            propertyItem.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="w-20 h-16 bg-cover bg-center rounded mr-4" style="background-image: url('${property.images[0]}')"></div>
+                            <div>
+                                <h4 class="font-bold text-primary">${property.title}</h4>
+                                <p class="text-sm text-gray-600">${property.price}</p>
+                                <button class="mt-1 text-accent text-sm font-medium view-on-list" data-property="${property.id}">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+            // Add event listener to view details button
+            const viewBtn = propertyItem.querySelector(".view-on-list");
+            viewBtn.addEventListener("click", function () {
+              showPropertyModal(property.id);
+            });
+
+            mapPropertiesList.appendChild(propertyItem);
+          });
+        }
+      }
+
+      // Function to show property modal
+      function showPropertyModal(propertyId) {
+        const property = properties.find((p) => p.id === propertyId);
+        if (!property) return;
+
+        const modal = document.getElementById("property-modal");
+        const modalBody = document.getElementById("modal-body");
+
+        // Create modal content
+        let modalContent = `
+                <div class="relative">
+                    <div class="h-64 md:h-80 bg-cover bg-center" style="background-image: url('${
+                      property.images[0]
+                    }')"></div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h2 class="text-2xl font-bold text-primary">${
+                              property.title
+                            }</h2>
+                            <span class="${
+                              property.type === "sale"
+                                ? "bg-accent"
+                                : "bg-green-500"
+                            } text-white text-sm font-medium px-3 py-1 rounded">
+                                ${
+                                  property.type === "sale"
+                                    ? "For Sale"
+                                    : "For Rent"
+                                }
+                            </span>
+                        </div>
+                        
+                        <div class="flex items-center text-gray-600 mb-4">
+                            <i class="fas fa-map-marker-alt text-accent mr-2"></i>
+                            <span>${getLocationName(property.location)}</span>
+                        </div>
+                        
+                        <div class="flex justify-between text-gray-700 mb-6 border-b pb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-bed text-accent mr-2"></i>
+                                <span>${property.beds} Beds</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-bath text-accent mr-2"></i>
+                                <span>${property.baths} Baths</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-ruler-combined text-accent mr-2"></i>
+                                <span>${property.area}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h3 class="text-xl font-bold text-primary mb-3">Description</h3>
+                            <p class="text-gray-600">${property.description}</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h3 class="text-xl font-bold text-primary mb-3">Features</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                ${property.features
+                                  .map(
+                                    (feature) => `
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check text-green-500 mr-2"></i>
+                                        <span>${feature}</span>
+                                    </div>
+                                `
+                                  )
+                                  .join("")}
+                            </div>
+                        </div>
+                        
+                        <div class="property-gallery">
+                            ${property.images
+                              .map(
+                                (img, index) => `
+                                <div class="gallery-img ${
+                                  index === 0 ? "active-gallery" : ""
+                                }" 
+                                     style="background-image: url('${img}')" 
+                                     data-img="${img}">
+                                </div>
+                            `
+                              )
+                              .join("")}
+                        </div>
+                        
+                        <div class="mt-6 border-t pt-6">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-primary">${
+                                      property.price
+                                    }</h3>
+                                    <p class="text-gray-600">Contact Agent: ${
+                                      property.agent
+                                    }</p>
+                                </div>
+                                <div class="flex space-x-4">
+                                    <a href="tel:${
+                                      property.agentPhone
+                                    }" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-accent transition duration-300">
+                                        <i class="fas fa-phone-alt mr-2"></i>Call
+                                    </a>
+                                    <a href="mailto:${
+                                      property.agentEmail
+                                    }" class="bg-accent text-white px-4 py-2 rounded-md hover:bg-red-600 transition duration-300">
+                                        <i class="fas fa-envelope mr-2"></i>Email
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        modalBody.innerHTML = modalContent;
+        modal.style.display = "block";
+
+        // Add event listeners to gallery images
+        const galleryImages = modal.querySelectorAll(".gallery-img");
+        const mainImage = modal.querySelector(".h-64");
+
+        galleryImages.forEach((img) => {
+          img.addEventListener("click", function () {
+            const newImage = this.getAttribute("data-img");
+            mainImage.style.backgroundImage = `url('${newImage}')`;
+
+            // Update active class
+            galleryImages.forEach((i) => i.classList.remove("active-gallery"));
+            this.classList.add("active-gallery");
+          });
+        });
+
+        // Close modal functionality
+        const closeModal = document.querySelector(".close-modal");
+        if (closeModal) {
+          closeModal.addEventListener("click", function () {
+            modal.style.display = "none";
+          });
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener("click", function (e) {
+          if (e.target === modal) {
+            modal.style.display = "none";
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
